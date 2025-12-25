@@ -29,14 +29,14 @@ for (let i = 0; i < colors.length; i++) {
 }
 
 //constants
-const control_size = 190;
+const control_size = 150;
 const tank_offset = 300;
-const tank_size = 50;
-const tank_speed = 1.5;
+const tank_size = 40;
+const tank_speed = 1;
 const tank_rotation_speed = 2;
 const tank_cooldown = 400;
 const bullet_speed = 5;
-const bullet_size = 15;
+const bullet_size = 10;
 const bg_color = '#D5C69C';
 
 //game timing
@@ -140,9 +140,19 @@ class tank {
                     }
                 }
                 //move it
-                this.x += tank_speed * Math.sin(this.direction * Math.PI / 180);
-                this.y -= tank_speed * Math.cos(this.direction * Math.PI / 180);
+                const radians = this.direction * Math.PI / 180;
+                this.x += tank_speed * Math.sin(radians);
+                this.y -= tank_speed * Math.cos(radians);
 
+                for (let i = 0; i < colors.length; i++) {
+                    const tank = tanks[i];
+                    if (tank != this) {
+                        while (circle_collision(this.x, this.y, tank_size - 15, tank.x, tank.y, tank_size - 15)) {
+                            tank.x += Math.sin(radians);
+                            tank.y -= Math.cos(radians);
+                        }
+                    }
+                }
             }
             //control not down
             else {
@@ -188,13 +198,15 @@ class bullet {
         this.x += bullet_speed * Math.sin(this.direction * Math.PI / 180);
         this.y -= bullet_speed * Math.cos(this.direction * Math.PI / 180);
 
+        //check if outside border
         if (this.x > 1500 || this.y > 1500 * 9 / 16 || this.x < -500 || this.y < -500)
             this.delete();
+        //check if hitting any tank
         for (let i = 0; i < colors.length; i++) {
             const tank = tanks[i];
             if (tank.id != this.id) {
                 const radians = this.direction * Math.PI / 180;
-                if (circle_collision(this.x + bullet_size * Math.sin(radians), this.y + -bullet_size * Math.cos(radians), 10, tank.x, tank.y, tank_size - 10)) {
+                if (circle_collision(this.x + bullet_size * Math.sin(radians), this.y - bullet_size * Math.cos(radians), 10, tank.x, tank.y, tank_size - 15)) {
                     this.delete();
                     tank.destroyed = true;
                 }
