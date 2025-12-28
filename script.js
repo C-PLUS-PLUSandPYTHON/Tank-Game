@@ -293,7 +293,7 @@ function draw_ellipse(x, y, radius_x, radius_y, rotation, stroke_color, line_wid
 }
 function game_setup() {
     document.body.style.cssText = "background-color: #000000; margin: 0; padding: 0; overflow: hidden;";
-    canvas.style.cssText = "position: absolute; transform: translate(-50%, -50%); top: 50%; left: 50%; touch-action: none;";
+    canvas.style.cssText = "position: absolute; transform: translate(-50%, -50%); top: 50%; left: 50%; touch-action: none; user-select: none; -webkit-user-select: none; -ms-user-select: none;";
 
     canvas.addEventListener('contextmenu', e => {
         e.preventDefault();
