@@ -29,14 +29,14 @@ for (let i = 0; i < colors.length; i++) {
 }
 
 //constants
-const control_size = 150;
+const control_size = 180;
 const tank_offset = 300;
-const tank_size = 40;
-const tank_speed = 1;
-const tank_rotation_speed = 2;
+const tank_size = 50;
+const tank_speed = 2;
+const tank_rotation_speed = 3;
 const tank_cooldown = 400;
 const bullet_speed = 5;
-const bullet_size = 10;
+const bullet_size = 15;
 const bg_color = '#D5C69C';
 
 //game timing
@@ -52,7 +52,7 @@ class control {
     id = -1;
     x = 0;
     y = 0;
-    direction = 0;
+    orientation = 0;
     down = false;
     constructor(id) {
         //check id valid
@@ -95,9 +95,11 @@ class tank {
     id = -1;
     destroyed = false;
     cooldown = 0;
+    last_control_state = false;
     x = 500;
     y = 500;
-    direction = 0;
+    orientation = 0;
+    rot_multiplier = 1;
     constructor(id) {
         //check id valid
         this.id = id >= 0 && id < colors.length ? id : -1;
@@ -127,20 +129,23 @@ class tank {
             //if its control is down
             if (controls[this.id].down) {
                 //if it's the first time shooting
-                if (this.cooldown == 0) {
-                    this.cooldown = tank_cooldown;
-                    //shoot (instance a bullet)
-                    bullets.push(new bullet(this.id, this.x, this.y, this.direction));
-                }
-                else {
-                    //reset shooting
-                    this.cooldown -= ms_per_tick;
-                    if (this.cooldown < 0.05) {
-                        this.cooldown = 0.05;
+                if (!this.last_control_state) {
+                    this.rot_multiplier *= -1;
+                    if (!this.cooldown) {
+                        this.cooldown = tank_cooldown;
+                        //shoot (instance a bullet)
+                        bullets.push(new bullet(this.id, this.x, this.y, this.orientation));
+                    }
+                    else {
+                        //update cooldown
+                        this.cooldown -= ms_per_tick;
+                        if (this.cooldown < 0.05) {
+                            this.cooldown = 0.05;
+                        }
                     }
                 }
                 //move it
-                const radians = this.direction * Math.PI / 180;
+                const radians = this.orientation * Math.PI / 180;
                 this.x += tank_speed * Math.sin(radians);
                 this.y -= tank_speed * Math.cos(radians);
 
@@ -156,21 +161,22 @@ class tank {
             }
             //control not down
             else {
-                //reset shooting
+                //update cooldown
                 this.cooldown -= ms_per_tick;
                 if (this.cooldown < 0) {
                     this.cooldown = 0;
                 }
                 //rotate it
-                this.direction += tank_rotation_speed;
-                this.direction = this.direction % 360;
+                this.orientation += tank_rotation_speed * this.rot_multiplier;
+                this.orientation = this.orientation % 360;
             }
+            this.last_control_state = controls[this.id].down;
         }
     }
     render() {
         //draw it
         if (this.id >= 0 && this.id < colors.length) {
-            draw_rotated_image(tank_image, this.x, this.y, tank_size, -1, this.direction);
+            draw_rotated_image(tank_image, this.x, this.y, tank_size, -1, this.orientation);
         }
     }
 }
@@ -178,16 +184,16 @@ class bullet {
     id = -1;
     x = 0;
     y = 0;
-    direction = 0;
+    orientation = 0;
     element = null;
 
-    constructor(id, x, y, direction) {
+    constructor(id, x, y, orientation) {
         //check id valid
         this.id = id >= 0 && id < colors.length ? id : -1;
         //set properties
         this.x = x;
         this.y = y;
-        this.direction = direction;
+        this.orientation = orientation;
     }
     delete() {
         const index = bullets.indexOf(this);
@@ -195,8 +201,8 @@ class bullet {
     }
     update() {
         //move it
-        this.x += bullet_speed * Math.sin(this.direction * Math.PI / 180);
-        this.y -= bullet_speed * Math.cos(this.direction * Math.PI / 180);
+        this.x += bullet_speed * Math.sin(this.orientation * Math.PI / 180);
+        this.y -= bullet_speed * Math.cos(this.orientation * Math.PI / 180);
 
         //check if outside border
         if (this.x > 1500 || this.y > 1500 * 9 / 16 || this.x < -500 || this.y < -500)
@@ -205,7 +211,7 @@ class bullet {
         for (let i = 0; i < colors.length; i++) {
             const tank = tanks[i];
             if (tank.id != this.id) {
-                const radians = this.direction * Math.PI / 180;
+                const radians = this.orientation * Math.PI / 180;
                 if (circle_collision(this.x + bullet_size * Math.sin(radians), this.y - bullet_size * Math.cos(radians), 10, tank.x, tank.y, tank_size - 15)) {
                     this.delete();
                     tank.destroyed = true;
@@ -216,7 +222,7 @@ class bullet {
     render() {
         //draw it
         if (this.id >= 0 && this.id < colors.length) {
-            draw_rotated_image(bullet_image, this.x, this.y, bullet_size, -1, this.direction);
+            draw_rotated_image(bullet_image, this.x, this.y, bullet_size, -1, this.orientation);
         }
     }
 }
@@ -239,8 +245,7 @@ function mouse_down_circle(x, y, r) {
 }
 
 function circle_collision(x, y, r, x2, y2, r2) {
-    const distance = Math.sqrt((x - x2) ** 2 + (y - y2) ** 2);
-    if (distance < r + r2) {
+    if (Math.abs((x - x2) ** 2 + (y - y2) ** 2) < (r + r2) ** 2) {
         return true;
     }
     return false;
