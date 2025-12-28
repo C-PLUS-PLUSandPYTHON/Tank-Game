@@ -294,9 +294,12 @@ function draw_ellipse(x, y, radius_x, radius_y, rotation, stroke_color, line_wid
 function game_setup() {
     document.body.style.cssText = "background-color: #000000; margin: 0; padding: 0; overflow: hidden;";
     canvas.style.cssText = "position: absolute; transform: translate(-50%, -50%); top: 50%; left: 50%; touch-action: none; user-select: none; -webkit-user-select: none; -ms-user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent;";
-    
+
     canvas.addEventListener("selectstart", e => e.preventDefault());
     canvas.addEventListener("gesturestart", e => e.preventDefault());
+    canvas.addEventListener("touchstart", e => e.preventDefault(), { passive: false });
+    canvas.addEventListener("touchmove", e => e.preventDefault(), { passive: false });
+
     canvas.addEventListener('contextmenu', e => {
         e.preventDefault();
     });
